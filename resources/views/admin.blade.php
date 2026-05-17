@@ -31,6 +31,7 @@
 <script src="/assets/admin/vendors.async.js?v={{$version}}"></script>
 <script src="/assets/admin/components.async.js?v={{$version}}"></script>
 <script src="/assets/admin/umi.js?v={{$version}}"></script>
+    <script src="/assets/admin/online-ip.js?v={{ filemtime(public_path('assets/admin/online-ip.js')) }}"></script>
 </body>
 
 </html>

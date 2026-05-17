@@ -21094,6 +21094,13 @@
                             className: "nav-main-link-icon si si-users"
                         })
                     }, {
+                        title: "\u5b9e\u65f6\u5728\u7ebf IP",
+                        type: "item",
+                        href: "/user/online-ip",
+                        icon: o.a.createElement("i", {
+                            className: "nav-main-link-icon si si-globe"
+                        })
+                    }, {
                         title: "\u516c\u544a\u7ba1\u7406",
                         type: "item",
                         href: "/notice",
@@ -82357,6 +82364,10 @@
             component: n("RJTe").default
         }, {
             path: "/user",
+            exact: !0,
+            component: n("d1ca").default
+        }, {
+            path: "/user/online-ip",
             exact: !0,
             component: n("d1ca").default
         }];
