@@ -3,63 +3,158 @@
 namespace App\Services;
 
 use App\Utils\QQWry;
-use Illuminate\Support\Facades\Cache;
 
 class IpLocationService
 {
-    public static function lookup($ip)
+    private $qqwry;
+    private $ip2location;
+
+    public function get($ip)
+    {
+        return $this->locate($ip);
+    }
+
+    public function getLocation($ip)
+    {
+        return $this->locate($ip);
+    }
+
+    public function locate($ip)
     {
         $ip = trim((string) $ip);
 
-        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+        if ($ip === '' || !filter_var($ip, FILTER_VALIDATE_IP)) {
             return '未知';
         }
 
-        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            return 'IPv6 暂不支持本地纯真库';
+        if ($this->isPrivateOrReservedIp($ip)) {
+            return '本地/内网地址';
         }
 
-        if (
-            filter_var(
-                $ip,
-                FILTER_VALIDATE_IP,
-                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
-            ) === false
-        ) {
-            return '内网/保留地址';
+        // IPv6：走 IP2Location LITE DB11 IPv6 BIN
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return $this->ip2locationLocation($ip) ?: 'IPv6 未知';
         }
 
-        if (!is_file(storage_path('app/qqwry.dat'))) {
-            return '未安装 QQWry 数据库';
+        // IPv4：优先纯真 QQWry
+        $qqwry = $this->qqwryLocation($ip);
+
+        if ($qqwry !== '') {
+            return $qqwry;
         }
 
-        return Cache::remember('online_ip_location_' . $ip, 86400, function () use ($ip) {
-            $reader = new QQWry();
-            $location = $reader->getLocation($ip);
-
-            if (!$location) {
-                return is_file(storage_path('app/qqwry.dat')) ? '未知' : '未安装 QQWry 数据库';
-            }
-
-            $country = self::gbkToUtf8($location['country'] ?? '');
-            $area = self::gbkToUtf8($location['area'] ?? '');
-
-            $text = trim($country . ' ' . $area);
-
-            return $text !== '' ? $text : '未知';
-        });
+        // IPv4 纯真查不到时，用 IP2Location 兜底
+        return $this->ip2locationLocation($ip) ?: '未知';
     }
 
-    private static function gbkToUtf8($text)
+    private function qqwryLocation($ip)
     {
-        $text = (string) $text;
+        $path = storage_path('app/qqwry.dat');
 
-        if ($text === '') {
+        if (!is_file($path)) {
             return '';
         }
 
-        $converted = @iconv('GBK', 'UTF-8//IGNORE', $text);
+        try {
+            if (!$this->qqwry) {
+                $this->qqwry = new QQWry($path);
+            }
 
-        return $converted !== false ? $converted : $text;
+            $result = $this->qqwry->getLocation($ip);
+
+            $country = $this->gbkToUtf8($result['country'] ?? '');
+            $area = $this->gbkToUtf8($result['area'] ?? '');
+
+            $location = trim($country . ' ' . $area);
+
+            if ($location === '' || stripos($location, 'CZ88.NET') !== false) {
+                return '';
+            }
+
+            return $location;
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    private function ip2locationLocation($ip)
+    {
+        if (!class_exists('\IP2Location\Database')) {
+            return '';
+        }
+
+        $path = storage_path('app/IP2LOCATION-LITE-DB11.IPV6.BIN');
+
+        if (!is_file($path)) {
+            return '';
+        }
+
+        try {
+            if (!$this->ip2location) {
+                $class = '\IP2Location\Database';
+                $this->ip2location = new $class($path, $class::FILE_IO);
+            }
+
+            $record = $this->ip2location->lookup($ip, \IP2Location\Database::ALL);
+
+            if (!is_array($record)) {
+                return '';
+            }
+
+            $parts = [];
+
+            foreach ([
+                $record['countryName'] ?? '',
+                $record['regionName'] ?? '',
+                $record['cityName'] ?? '',
+            ] as $part) {
+                $part = $this->cleanPart($part);
+
+                if ($part !== '' && !in_array($part, $parts, true)) {
+                    $parts[] = $part;
+                }
+            }
+
+            return trim(implode(' ', $parts));
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    private function cleanPart($value)
+    {
+        $value = trim((string) $value);
+
+        if ($value === '' || $value === '-' || strtolower($value) === 'unknown') {
+            return '';
+        }
+
+        if (stripos($value, 'This parameter is unavailable') !== false) {
+            return '';
+        }
+
+        return $value;
+    }
+
+    private function gbkToUtf8($value)
+    {
+        $value = (string) $value;
+
+        if ($value === '') {
+            return '';
+        }
+
+        $converted = @iconv('GBK', 'UTF-8//IGNORE', $value);
+
+        return $converted !== false ? $converted : $value;
+    }
+
+    private function isPrivateOrReservedIp($ip)
+    {
+        return !filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        );
     }
 }
