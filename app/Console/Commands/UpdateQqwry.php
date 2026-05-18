@@ -12,7 +12,7 @@ class UpdateQqwry extends Command
 
     public function handle()
     {
-        $url = 'https://raw.githubusercontent.com/out0fmemory/qqwry.dat/master/qqwry_lastest.dat';
+        $url = 'https://github.com/metowolf/qqwry.dat/releases/latest/download/qqwry.dat';
         $target = storage_path('app/qqwry.dat');
         $tmp = $target . '.tmp';
 
