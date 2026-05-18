@@ -9,6 +9,11 @@ class IpLocationService
     private $qqwry;
     private $ip2location;
 
+    public static function lookup($ip)
+    {
+        return (new self())->locate($ip);
+    }
+
     public function get($ip)
     {
         return $this->locate($ip);
