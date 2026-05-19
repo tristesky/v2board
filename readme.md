@@ -3,7 +3,7 @@
 [![](https://img.shields.io/badge/TgChat-@UnOfficialV2board讨论-blue.svg)](https://t.me/unofficialV2board)
 
 ## 本分支支持的后端
- - [修改版V2bX](https://github.com/wyx2685/V2bX)
+ - [修改版V2bX](https://github.com/tristesky/V2bX)
  - [v2node](https://github.com/wyx2685/v2node)
 
 ## 原版迁移步骤

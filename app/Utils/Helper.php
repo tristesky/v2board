@@ -168,7 +168,7 @@ class Helper
         return strtr(rawurlencode($str), $revert);
     }
 
-    public static function buildUri($uuid, $server)
+    public static function buildUri($uuid, $server, $options = [])
     {
         if ($server['type'] == 'v2node') {
             $server['type'] = $server['protocol'];
@@ -176,6 +176,9 @@ class Helper
         $method = "build" . ucfirst($server['type']) . "Uri";
 
         if (method_exists(self::class, $method)) {
+            if ($method === 'buildVlessUri') {
+                return self::buildVlessUri($uuid, $server, $options);
+            }
             return self::$method($uuid, $server);
         }
 
@@ -289,7 +292,7 @@ class Helper
         return "vmess://" . base64_encode(json_encode($config)) . "\r\n";
     }
 
-    public static function buildVlessUri($uuid, $server)
+    public static function buildVlessUri($uuid, $server, $options = [])
     {
         $name = self::encodeURIComponent($server['name']);
         $tlsSettings = $server['tls_settings'] ?? [];
@@ -334,6 +337,9 @@ class Helper
         }
 
         self::configureNetworkSettings($server, $config);
+        if (($server['network'] ?? null) === 'grpc' && !empty($options['vless_grpc_mode'])) {
+            $config['mode'] = $options['vless_grpc_mode'];
+        }
 
         return self::buildUriString('vless', $uuid, $server, $name, $config);
     }

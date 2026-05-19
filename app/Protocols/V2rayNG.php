@@ -21,7 +21,9 @@ class V2rayNG
         $uri = '';
 
         foreach ($this->servers as $server) {
-            $uri .= Helper::buildUri($this->user['uuid'], $server);
+            $uri .= Helper::buildUri($this->user['uuid'], $server, [
+                'vless_grpc_mode' => 'multi',
+            ]);
         }
         return base64_encode($uri);
     }
