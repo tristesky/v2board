@@ -1,7 +1,5 @@
 <img src="https://avatars.githubusercontent.com/u/56885001?s=200&v=4" alt="logo" width="130" height="130" align="right"/>
 
-[![](https://img.shields.io/badge/TgChat-@UnOfficialV2board讨论-blue.svg)](https://t.me/unofficialV2board)
-
 ## 本分支支持的后端
  - [修改版V2bX](https://github.com/tristesky/V2bX)
  - [v2node](https://github.com/wyx2685/v2node)
